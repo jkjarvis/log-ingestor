@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elasticsearch Logs UI</title>
+    <!-- Include jQuery -->
+    <script
+      src="https://code.jquery.com/jquery-3.6.4.min.js"
+      integrity="sha256-oP6HI/tZ1a9lOT/9l6B6Zorg/2f0H6pNLS9VEh+6tLY="
+      crossorigin="anonymous"
+    ></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      .tab {
+        display: none;
+      }
+      .tab.active {
+        display: block;
+      }
+      .tab-btn {
+        margin-right: 10px;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      label,
+      select,
+      input {
+        margin-bottom: 10px;
+      }
+      #responseTextArea {
+        width: 100%;
+        height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Elasticsearch Logs UI</h1>
+    <div class="tabs">
+      <button class="tab-btn" onclick="openTab('basicSearch')">
+        Basic Search
+      </button>
+      <button class="tab-btn" onclick="openTab('timeSearch')">
+        Time Search
+      </button>
+    </div>
+
+    <!-- Basic Search Tab -->
+    <div id="basicSearch" class="tab active">
+      <form id="basicSearchForm">
+        <label for="fullTextSearch">Full Text Search: </label>
+        <input type="text" id="fullTextSearch" name="fullTextSearch" />
+        <br />
+        <label>Select Fields:</label><br />
+        <input
+          type="checkbox"
+          id="levelCheckbox"
+          name="level"
+          checked
+        />
+        <label for="levelCheckbox">Level</label><br />
+        <input
+          type="checkbox"
+          id="messageCheckbox"
+          name="message"
+          checked
+        />
+        <label for="messageCheckbox">Message</label><br />
+        <input
+          type="checkbox"
+          id="traceIdCheckbox"
+          name="traceId"
+          checked
+        />
+        <label for="traceIdCheckbox">Trace ID</label><br />
+        <input
+          type="checkbox"
+          id="spanIdCheckbox"
+          name="spanId"
+          checked
+        />
+        <label for="spanIdCheckbox">Span ID</label><br />
+        <input
+          type="checkbox"
+          id="commitCheckbox"
+          name="commit"
+          checked
+        />
+        <label for="commitCheckbox">Commit</label><br />
+        <input
+          type="checkbox"
+          id="resourceIdCheckbox"
+          name="resourceId"
+          checked
+        />
+        <label for="resourceIdCheckbox">Resource ID</label><br />
+        <input
+          type="checkbox"
+          id="parentResourceIdCheckbox"
+          name="parentResourceId"
+          checked
+        />
+        <label for="parentResourceIdCheckbox">Parent Resource ID</label><br />
+        <button type="button" onclick="performBasicSearch()">Search</button>
+      </form>
+    </div>
+
+    <!-- Time Search Tab -->
+    <div id="timeSearch" class="tab">
+      <form id="timeSearchForm">
+        <label for="startTime">Start Time:</label>
+        <input type="datetime-local" id="startTime" name="startTime" />
+        <br />
+        <label for="endTime">End Time:</label>
+        <input type="datetime-local" id="endTime" name="endTime" />
+        <button type="button" onclick="performTimeSearch()">Search</button>
+      </form>
+    </div>
+
+    <div id="responseArea">
+      <h2>Search Response:</h2>
+      <textarea id="responseTextArea" readonly></textarea>
+    </div>
+
+    <script>
+      function openTab(tabName) {
+        const tabs = document.querySelectorAll(".tab");
+        tabs.forEach((tab) => tab.classList.remove("active"));
+        document.getElementById(tabName).classList.add("active");
+        document.getElementById("responseTextArea").value = '';
+      }
+
+      function performBasicSearch() {
+        const searchFormData = new FormData(
+          document.getElementById("basicSearchForm")
+        );
+        const searchParams = new URLSearchParams(searchFormData);
+        const endpoint = "http://localhost:3000/search"; // Replace with your actual Elasticsearch endpoint
+        const fields = getSelectedFields();
+
+        // Make API call
+        $.ajax({
+          url: endpoint,
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            queryType: "fullTextSearch",
+            queryText: searchParams.get("fullTextSearch"),
+            queryFields: fields,
+          }),
+          success: function (response) {
+            document.getElementById("responseTextArea").value = JSON.stringify(
+              response,
+              null,
+              2
+            );
+          },
+          error: function (error) {
+            document.getElementById("responseTextArea").value = JSON.stringify(
+              error,
+              null,
+              2
+            );
+          },
+        });
+      }
+
+      function performTimeSearch() {
+        const startTime = document.getElementById("startTime").value;
+        const endTime = document.getElementById("endTime").value;
+        const endpoint = "http://localhost:3000/search"; // Replace with your actual Elasticsearch endpoint
+        const fields = getSelectedFields();
+
+        // Make API call for time-based search
+        $.ajax({
+          url: endpoint,
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            queryType: "timestampSearch",
+            startDate: startTime,
+            endDate: endTime
+          }),
+          success: function (response) {
+            document.getElementById("responseTextArea").value = JSON.stringify(
+              response,
+              null,
+              2
+            );
+          },
+          error: function (error) {
+            document.getElementById("responseTextArea").value = JSON.stringify(
+              error,
+              null,
+              2
+            );
+          },
+        });
+      }
+
+      function getSelectedFields() {
+        const fields = [];
+        const checkboxes = document.querySelectorAll(
+          '.tab.active input[type="checkbox"]:checked'
+        );
+        checkboxes.forEach((checkbox) => fields.push(checkbox.name));
+        return fields;
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model RawLogs {
+    id        Int      @id @default(autoincrement())
+    data      Json
+    resourceId String?
+    createdAt DateTime @default(now())
+}
+
+enum LogLevel {
+    error
+    debug
+    info
+    warn
+    trace
+    fatal
+}
+
+model Log {
+    id Int @id @default(autoincrement())
+    level LogLevel
+    message String
+    timestamp String
+    traceId String
+    spanId String
+    commit String
+    resourceId String
+    metadata Json
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+enum SyncStatus {
+  SUCCESS
+  ERROR
+  INIT
+}
+
+model SyncDataToElasticSearch{
+  id Int @id @default(autoincrement())
+  status SyncStatus
+  metadata Json? //to store any error logs
+  startedAt DateTime @default(now())
+  endedAt DateTime?
+}

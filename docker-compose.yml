@@ -1,0 +1,33 @@
+version: '3'
+services:
+  web-server:
+    build: .
+    container_name: web-server
+    image: web-server:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: "postgresql://dyte:password@postgres:5432/dyte?schema=public"
+      ELASTICSEARCH_API_KEY: "d21ZUTU0c0JORmh2ZG1haDJSd2g6ZWczdV9ocUdRajZpWW45MmozQWNRZw=="
+  postgres:
+    hostname: postgres
+    container_name: postgres-db
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: dyte
+      POSTGRES_USER: dyte
+      POSTGRES_PASSWORD: password
+  sync-data:
+    container_name: sync-data
+    image: web-server:latest
+    command: ["node", "./elasticSearch/syncData.js"]
+    environment:
+      DATABASE_URL: "postgresql://dyte:password@postgres:5432/dyte?schema=public"
+      ELASTICSEARCH_API_KEY: "d21ZUTU0c0JORmh2ZG1haDJSd2g6ZWczdV9ocUdRajZpWW45MmozQWNRZw=="
+    depends_on:
+      - web-server
+
